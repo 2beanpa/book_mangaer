@@ -1,0 +1,547 @@
+/* Book Manager 디자인 — 기준은 design.md다.
+   원칙: 책장을 덮은 뒤의 고요함을 깨지 않는다. 화면은 독자님의 독서 공책이고, 주인공은 옮겨 적은 문장이다. */
+
+/* 글꼴은 두 종이다. 화면 글자는 Pretendard 400·700, 인상 깊은 문장만 Noto Serif KR 400.
+   글꼴 선언은 index.html에서 npm 패키지(node_modules)의 CSS로 불러온다. */
+
+/* 색은 이 여섯 가지만 쓴다. 이름과 쓰임은 design.md의 색 표와 같다. */
+:root {
+  --paper: #f8fafc;       /* 종이: 바탕, 기본 버튼 글자 */
+  --ink: #1e2a44;         /* 먹: 책 제목, 문장, 본문, 제목, 숫자 */
+  --pencil: #5b6478;      /* 연필: 안내, 날짜, 숫자 요약의 문장, 그래프 막대·축 */
+  --line: #dde3ec;        /* 선: 문장 사이 구분선, 격자선, 목록의 빈 별 */
+  --line-strong: #8792a6; /* 진한 선: 입력 칸, 기준선, 차례 점선, 빈 별, 목록의 채워진 별 */
+  --accent: #8b2f6b;      /* 책갈피: 누를 수 있는 것과 가장 중요한 숫자에만 */
+
+  --serif: "Noto Serif KR", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* display를 지정한 요소도 hidden이면 확실히 숨긴다. */
+[hidden] {
+  display: none !important;
+}
+
+/* 화면 읽기 프로그램에만 들리는 제목 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+body {
+  /* 문단 끝에 한 단어만 외따로 남지 않게 줄을 나눈다. */
+  text-wrap: pretty;
+  margin: 0;
+  font-family: "Pretendard", sans-serif;
+  font-weight: 400;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  /* 한글이 단어 중간에서 줄바꿈되지 않게 한다. 띄어쓰기 없는 긴 제목만 어쩔 수 없이 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* 한 단, 최대 640px, 가운데. 간격은 8의 배수만 쓴다. */
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 16px 96px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  line-height: 1.3;
+}
+
+.subtitle {
+  margin: 8px 0 48px;
+  color: var(--pencil);
+}
+
+/* 영역은 상자 없이 넉넉한 간격으로만 나눈다. 공책의 한 쪽처럼 흰 여백이 구분선 노릇을 한다. */
+.section {
+  margin-bottom: 64px;
+}
+
+.section h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0 0 16px;
+  color: var(--pencil);
+  font-size: 14px;
+}
+
+label,
+.field-label {
+  display: block;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.field-label {
+  margin-top: 16px;
+}
+
+/* ---------- 입력 칸과 버튼 (모서리 8px) ---------- */
+
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"],
+textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--paper);
+  font-size: 16px;
+}
+
+input[type="text"] {
+  flex: 1;
+  /* 좁은 화면에서 입력 칸이 줄어들어야 옆 버튼이 화면 밖으로 밀려나지 않는다. */
+  min-width: 0;
+}
+
+#title-form input,
+textarea {
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* 문장을 옮겨 적는 칸은 남겨질 모습 그대로 명조로 쓴다. */
+textarea.quote-input {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+input[type="text"]:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 기본 버튼: 책갈피 바탕에 종이색 글자 */
+button {
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--paper);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* 마우스를 올린 상태는 새 색 대신 투명도로 표시한다. */
+button:hover {
+  opacity: 0.85;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* 강조색은 하나뿐이라 지우기 버튼은 먹색 글자와 진한 선으로 둔다. */
+button.danger {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.form-actions,
+.item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.form-actions {
+  margin-top: 8px;
+}
+
+.item-actions {
+  margin-top: 16px;
+}
+
+.item-actions button,
+.quote-list .form-actions button {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.message {
+  min-height: 1.2em;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.save-error {
+  margin: 0 0 32px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+
+.empty {
+  margin: 0;
+  color: var(--pencil);
+}
+
+/* ---------- 별점 ---------- */
+
+.stars {
+  display: inline-flex;
+}
+
+.stars .star {
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: var(--line-strong);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.stars .star.filled {
+  color: var(--accent);
+}
+
+/* ---------- 인상 깊은 문장 (명조) ---------- */
+
+/* 이 앱에서 가장 오래 읽히는 글이라 종이책 본문처럼 짠다.
+   화면에서 명조를 쓰는 곳은 문장뿐이다. 그래서 문장이 곧바로 눈에 들어온다. */
+.quote-text {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+/* 메인 화면의 최근 문장: 화면에서 가장 큰 글자다. */
+.latest-quote blockquote {
+  margin: 0;
+}
+
+.latest-quote .quote-text {
+  font-size: 24px;
+  line-height: 1.8;
+}
+
+.quote-source {
+  margin: 16px 0 0;
+  color: var(--pencil);
+  font-size: 14px;
+}
+
+.quote-source a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.quote-source a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 숫자 요약 ---------- */
+
+/* 상자 없이 문장으로 쓴다. 문장은 연필로 가라앉히고 숫자만 먹색 굵게 세운다. */
+.stats-summary {
+  margin: 0 0 24px;
+  color: var(--pencil);
+  line-height: 1.8;
+}
+
+.stats-summary strong {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 가장 중요한 숫자(지금까지 기록한 권수)만 책갈피로 둔다. */
+.stats-summary strong.key {
+  color: var(--accent);
+}
+
+/* ---------- 책 목록: 책의 차례처럼 ---------- */
+
+.book-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.book-list li {
+  padding: 8px 0;
+}
+
+/* 제목 ········ 별점. 왼쪽은 읽는 자리, 오른쪽은 누르는 자리다. */
+.toc-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.leader {
+  flex: 1;
+  min-width: 24px;
+  border-bottom: 1px dotted var(--line-strong);
+  transform: translateY(-5px);
+}
+
+.stars {
+  flex: none;
+}
+
+.book-title-link {
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+}
+
+.book-title-link:hover {
+  text-decoration: underline;
+}
+
+.book-date {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 14px;
+}
+
+/* 책 목록에서는 책 제목이 가장 먼저 보이게 별을 가라앉힌다. */
+/* 별은 작게 보여도 누르는 자리는 24px 이상 남긴다. */
+.book-list .star {
+  padding: 4px 3px;
+  font-size: 18px;
+  color: var(--line);
+}
+
+.book-list .star.filled {
+  color: var(--line-strong);
+}
+
+/* ---------- 책 상세 ---------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 32px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+#detail-title {
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+#detail-date {
+  margin: 0 0 8px;
+}
+
+.quote-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.quote-list li {
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+}
+
+.quote-list li:first-child {
+  padding-top: 8px;
+  border-top: none;
+}
+
+.quote-list .quote-text {
+  margin-bottom: 8px;
+}
+
+.quote-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.quote-row .item-actions {
+  margin-top: 0;
+}
+
+/* ---------- 그래프 ---------- */
+
+/* 막대는 데이터라서 강조색이 아닌 연필로 칠한다. 글자는 데이터 색 대신 글자 색을 쓴다. */
+.chart {
+  --chart-series: var(--pencil);
+  --chart-baseline: var(--line-strong);
+  --chart-text: var(--pencil);
+  position: relative;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart .baseline {
+  stroke: var(--chart-baseline);
+  stroke-width: 1;
+}
+
+.chart .bar {
+  fill: var(--chart-series);
+}
+
+.chart .bar.active {
+  opacity: 0.8;
+}
+
+.chart .axis-text {
+  fill: var(--chart-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .axis-text.current {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+.chart .value-label {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chart .hit {
+  fill: transparent;
+  cursor: default;
+}
+
+.chart .hit:focus {
+  outline: none;
+}
+
+.chart .hit:focus-visible {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+/* 툴팁: 면은 종이색, 그림자 대신 가는 선. 모서리는 버튼과 같은 8px. */
+.chart-tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--paper);
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
+.chart-tooltip strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.chart-tooltip span {
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+.chart-text {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.chart-text summary {
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.chart-text ul {
+  margin: 8px 0 0;
+  padding-left: 24px;
+  color: var(--pencil);
+}
+
+/* ---------- 확인 창 ---------- */
+
+/* 면은 종이색, 그림자 대신 가는 선. 모서리 12px. */
+.confirm-dialog {
+  width: min(400px, calc(100% - 32px));
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* 뒤 화면은 먹색을 반투명하게 덮어 가라앉힌다. */
+.confirm-dialog::backdrop {
+  background: rgb(30 42 68 / 0.4);
+}
+
+.confirm-dialog p {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+/* ---------- 좁은 화면 ---------- */
+
+@media (max-width: 480px) {
+  .container {
+    padding-top: 32px;
+  }
+
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .latest-quote .quote-text {
+    font-size: 20px;
+  }
+}

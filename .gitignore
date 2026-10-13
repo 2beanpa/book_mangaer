@@ -1,0 +1,5 @@
+# npm install로 받는 패키지
+node_modules/
+
+# Claude Code 개인 설정
+.claude/settings.local.json

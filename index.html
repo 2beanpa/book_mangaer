@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Manager</title>
+  <!-- 글꼴: 화면 글자는 pretendard 400·700, 인상 깊은 문장만 Noto Serif KR 400 -->
+  <link rel="stylesheet" href="node_modules/pretendard/dist/web/static/Pretendard-Regular.css">
+  <link rel="stylesheet" href="node_modules/pretendard/dist/web/static/Pretendard-Bold.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/noto-serif-kr/400.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Book Manager</h1>
+      <p class="subtitle">독자님의 독서 기록을 모아 둬요.</p>
+    </header>
+
+    <p id="save-error" class="save-error" role="alert" hidden>
+      독자님, 방금 기록을 저장하지 못했어요. 브라우저 저장 공간이 꽉 찼거나 막혀 있는지 확인해 주세요.
+    </p>
+
+    <!-- 책 목록 화면 -->
+    <div id="list-view">
+      <section class="section">
+        <form id="book-form" novalidate>
+          <label for="book-title">읽은 책의 제목을 적어 주세요.</label>
+          <div class="form-row">
+            <input id="book-title" type="text" maxlength="200" autocomplete="off" placeholder="책 제목을 여기에 적어요">
+            <button type="submit">기록해요</button>
+          </div>
+          <p class="field-label">별점도 골라 주세요. 나중에 매겨도 괜찮아요.</p>
+          <div id="form-rating"></div>
+          <p id="form-message" class="message" role="alert"></p>
+        </form>
+      </section>
+
+      <!-- 최근에 남긴 문장 하나 (문장이 없으면 숨긴다) -->
+      <section id="latest-quote" class="section latest-quote" aria-labelledby="latest-quote-heading" hidden>
+        <h2 id="latest-quote-heading" class="visually-hidden">최근에 남긴 문장이에요</h2>
+        <blockquote>
+          <p id="latest-quote-text" class="quote-text"></p>
+        </blockquote>
+        <p class="quote-source"><a id="latest-quote-book" href="#"></a><span id="latest-quote-date"></span></p>
+      </section>
+
+      <!-- 숫자 요약(책이 없으면 숨긴다)과 책 목록 -->
+      <section class="section">
+        <h2>독자님이 읽은 책이에요</h2>
+        <p id="stats-summary" class="stats-summary"></p>
+        <p id="empty-message" class="empty">아직 기록한 책이 없어요. 첫 책을 기록해 봐요.</p>
+        <ul id="book-list" class="book-list"></ul>
+        <p id="book-list-hint" class="hint">책 제목을 누르면 인상 깊은 문장을 남길 수 있어요.</p>
+      </section>
+
+      <!-- 독서 통계: 그래프 (책이 없으면 숨긴다) -->
+      <section id="monthly-card" class="section">
+        <h2>달마다 기록한 책이에요</h2>
+        <p class="hint">최근 12개월이에요. 한 칸이 책 한 권이고, 기록한 날짜로 세어요. 막대를 누르면 권수를 보여 줘요.</p>
+        <div id="monthly-chart" class="chart"></div>
+        <details class="chart-text">
+          <summary>달마다 몇 권인지 글로 봐요</summary>
+          <ul id="monthly-text"></ul>
+        </details>
+      </section>
+
+      <section id="rating-card" class="section">
+        <h2>별점마다 몇 권인지 보여 줘요</h2>
+        <p id="rating-unrated" class="hint"></p>
+        <div id="rating-chart" class="chart"></div>
+        <details class="chart-text">
+          <summary>별점마다 몇 권인지 글로 봐요</summary>
+          <ul id="rating-text"></ul>
+        </details>
+      </section>
+    </div>
+
+    <!-- 책 상세 화면 -->
+    <div id="detail-view" hidden>
+      <a href="#" class="back-link">← 목록으로 돌아가요</a>
+
+      <section class="section">
+        <div id="title-display">
+          <h2 id="detail-title"></h2>
+        </div>
+        <form id="title-form" novalidate hidden>
+          <label for="title-input">책 제목을 고쳐 주세요.</label>
+          <input id="title-input" type="text" maxlength="200" autocomplete="off">
+          <div class="form-actions">
+            <button type="button" id="title-cancel" class="secondary">취소해요</button>
+            <button type="submit">저장해요</button>
+          </div>
+          <p id="title-message" class="message" role="alert"></p>
+        </form>
+        <p id="detail-date" class="book-date"></p>
+        <div id="detail-rating"></div>
+        <div class="item-actions">
+          <button type="button" id="title-edit" class="secondary">제목을 고쳐요</button>
+          <button type="button" id="book-delete" class="danger">책을 지워요</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <form id="quote-form" novalidate>
+          <label for="quote-text">인상 깊은 문장을 옮겨 적어 주세요.</label>
+          <textarea id="quote-text" class="quote-input" rows="3" maxlength="1000"></textarea>
+          <div class="form-actions">
+            <button type="submit">문장을 남겨요</button>
+          </div>
+          <p id="quote-message" class="message" role="alert"></p>
+        </form>
+      </section>
+
+      <section class="section">
+        <h2>독자님이 남긴 문장이에요</h2>
+        <p id="quote-empty" class="empty">아직 남긴 문장이 없어요.</p>
+        <ul id="quote-list" class="quote-list"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- 지우기 전에 한 번 더 묻는 확인 창 -->
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <p id="confirm-message"></p>
+      <div class="form-actions">
+        <button value="cancel" class="secondary">취소해요</button>
+        <button value="ok" class="danger">지워요</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
